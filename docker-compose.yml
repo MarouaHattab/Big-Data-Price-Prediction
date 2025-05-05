@@ -1,0 +1,122 @@
+version: "3.8"
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    hostname: namenode
+    environment:
+      - CLUSTER_NAME=bigdata_cluster
+      - NAMENODE_HOSTNAME=namenode
+    ports:
+      - "9870:9870"  # Web UI HDFS
+      - "8020:8020"  # RPC HDFS
+    volumes:
+      - namenode:/hadoop/dfs/name
+    networks:
+      bigdata:
+        aliases:
+          - namenode.bigdata
+
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode1
+    hostname: datanode1
+    environment:
+      - CLUSTER_NAME=bigdata_cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_NAMENODE=namenode
+    ports:
+      - "9865:9864"  # datanode1 UI
+    volumes:
+      - datanode1:/hadoop/dfs/data
+    depends_on:
+      - namenode
+    networks:
+      bigdata:
+        aliases:
+          - datanode1
+
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    hostname: datanode2
+    environment:
+      - CLUSTER_NAME=bigdata_cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_NAMENODE=namenode
+    ports:
+      - "9866:9864"  # datanode2 UI
+    volumes:
+      - datanode2:/hadoop/dfs/data
+    depends_on:
+      - namenode
+    networks:
+      bigdata:
+        aliases:
+          - datanode2
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager
+    hostname: resourcemanager
+    environment:
+      - CLUSTER_NAME=bigdata_cluster
+      - YARN_RESOURCEMANAGER_HOSTNAME=resourcemanager
+    ports:
+      - "8088:8088"
+    depends_on:
+      - namenode
+    networks:
+      bigdata:
+        aliases:
+          - resourcemanager
+
+  # Use custom image for Spark master with ML dependencies
+  spark-master:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+    container_name: spark-master
+    hostname: spark-master
+    environment:
+      - INIT_DAEMON_STEP=setup_spark
+      - SPARK_MASTER_HOST=spark-master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    depends_on:
+      - namenode
+      - resourcemanager
+    networks:
+      bigdata:
+        aliases:
+          - spark-master
+  
+  # Also update worker to use same custom image with ML dependencies
+  spark-worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+    container_name: spark-worker1
+    hostname: spark-worker1
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+    depends_on:
+      - spark-master
+    ports:
+      - 8081:8081
+    networks:
+      bigdata:
+        aliases:
+          - spark-worker1
+
+volumes:
+  namenode:
+  datanode1:
+  datanode2:
+
+networks:
+  bigdata:
+    driver: bridge
+    name: bigdata
