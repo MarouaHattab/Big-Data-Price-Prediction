@@ -158,12 +158,12 @@ nano ./scripts/spark_gbt_optimized.py
 # Mettre à jour le script dans le container
 docker cp ./scripts/spark_gbt_optimized.py spark-master:/tmp/spark.py
 ```
-![capture ](copy.png)
+![capture ](img/copy.png)
 3. Relancer l'exécution avec spark-submit
 ```bash
 docker exec -it spark-master /opt/bitnami/spark/bin/spark-submit --master local[*] /tmp/spark.py
 ```
-![capture ](modeling.png)
+![capture ](img/modeling.png)
 
 ## 📜 Rapport Complet
 Le rapport détaillé du projet est disponible [ici](rapport.md). Il couvre les étapes de prétraitement, le feature engineering, l'entraînement du modèle et l'évaluation des performances.
