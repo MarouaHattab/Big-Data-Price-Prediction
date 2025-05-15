@@ -199,7 +199,6 @@ spark = SparkSession.builder \
 
 print("Starting enhanced property price analysis with GBT...")
 
-# Load data from HDFS
 try:
     df = spark.read.csv("hdfs://namenode:8020/ProjetBigData/data.csv", header=True, inferSchema=True)
     print("Successfully loaded data from HDFS")
@@ -247,7 +246,6 @@ for col_name in feature_cols:
     df = df.withColumn(col_name, F.when(F.col(col_name).isNull(), F.lit(0)).otherwise(F.col(col_name)))
 
 print("Filtering outliers...")
-# Calculate statistics for the target variable
 price_stats = df.select(
     mean(log_target_col).alias("mean"),
     stddev(log_target_col).alias("stddev")
@@ -333,27 +331,21 @@ gbt_regressor = GBTRegressor(
 )
 print("Configured GBT Regressor with enhanced parameters")
 
-# Create pipeline
 pipeline = Pipeline(stages=indexers + [assembler, gbt_regressor])
 
-# Split data
 train_df, test_df = df.randomSplit([0.8, 0.2], seed=42)
 print("Split data: Train set size: " + str(train_df.count()) + 
       ", Test set size: " + str(test_df.count()))
 
-# Train model
 print("Training GBT model...")
 model = pipeline.fit(train_df)
 print("Model training complete")
 
-# Make predictions
 print("Making predictions on test set...")
 predictions = model.transform(test_df)
 
-# Convert log predictions back to original scale
 predictions = predictions.withColumn("exp_prediction", F.expm1(predictions["prediction"]))
 
-# Evaluate model on log scale
 print("Evaluating model...")
 evaluator = RegressionEvaluator(labelCol=log_target_col, predictionCol="prediction", metricName="r2")
 r2_log = evaluator.evaluate(predictions)
@@ -364,14 +356,12 @@ rmse_log = evaluator.evaluate(predictions)
 evaluator = RegressionEvaluator(labelCol=log_target_col, predictionCol="prediction", metricName="mae")
 mae_log = evaluator.evaluate(predictions)
 
-# Evaluate model on original scale
 evaluator = RegressionEvaluator(labelCol=target_col, predictionCol="exp_prediction", metricName="r2")
 r2_original = evaluator.evaluate(predictions)
 
 evaluator = RegressionEvaluator(labelCol=target_col, predictionCol="exp_prediction", metricName="rmse")
 rmse_original = evaluator.evaluate(predictions)
 
-# Print metrics
 print("\nLog Scale Metrics:")
 print("R2 score: {:.4f}".format(r2_log))
 print("RMSE: {:.4f}".format(rmse_log))
@@ -381,20 +371,16 @@ print("\nOriginal Scale Metrics:")
 print("R2 score: {:.4f}".format(r2_original))
 print("RMSE: {:.4f}".format(rmse_original))
 
-# Extract feature importance
 try:
     print("\n===== FEATURE IMPORTANCE =====")
     gbt_model = model.stages[-1]
     importances = gbt_model.featureImportances
     
-    # Get feature names
     feature_names = feature_cols + [c + "_indexed" for c in string_cols]
     
-    # Create feature importance pairs
     feature_importance = [(feature, float(importance)) 
                          for feature, importance in zip(feature_names, importances)]
     
-    # Sort by importance
     feature_importance.sort(key=lambda x: x[1], reverse=True)
     
     print("Top 15 features:")
@@ -403,7 +389,6 @@ try:
 except Exception as e:
     print("Could not extract feature importance: " + str(e))
 
-# Calculate adjusted R-squared
 feature_count = len(feature_cols + string_cols)
 n = predictions.count()
 adjusted_r2 = 1 - ((1 - r2_log) * (n - 1) / (n - feature_count - 1))
@@ -411,7 +396,6 @@ print("\nAdvanced Metrics:")
 print("Adjusted R2 (log scale): {:.4f}".format(adjusted_r2))
 print("Feature count: {}".format(feature_count))
 
-# Stop Spark session
 spark.stop()
 
 
