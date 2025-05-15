@@ -193,7 +193,6 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.sql.functions import col, stddev, mean
 import pyspark.sql.functions as F
 
-# Initialize Spark session
 spark = SparkSession.builder \
     .appName("Enhanced Property Price GBT Prediction") \
     .getOrCreate()
@@ -214,18 +213,14 @@ except Exception as e:
         import sys
         sys.exit(1)
 
-# Print dataset info
 print("Dataset shape: (" + str(df.count()) + ", " + str(len(df.columns)) + ")")
 
-# Identify string columns that need to be indexed
 string_cols = [field.name for field in df.schema.fields 
               if field.dataType.typeName() == "string"]
 print("Found " + str(len(string_cols)) + " string columns to index")
 
-# Define target column
 target_col = "price"
 
-# Check if target column exists
 if target_col not in df.columns:
     print("WARNING: Target column 'price' not found in dataset.")
     numeric_cols = [field.name for field in df.schema.fields 
@@ -238,12 +233,10 @@ if target_col not in df.columns:
         import sys
         sys.exit(1)
 
-# Create log transformation of target
 print("Creating log transformation of target column: " + target_col)
 df = df.withColumn("log_price", F.log1p(df[target_col]))
 log_target_col = "log_price"
 
-# Define feature columns (excluding target and string columns)
 feature_cols = [col for col in df.columns 
                if col != target_col and col != log_target_col and col not in string_cols]
 print("Using " + str(len(feature_cols)) + " numeric features")
@@ -253,7 +246,6 @@ print("Handling missing values...")
 for col_name in feature_cols:
     df = df.withColumn(col_name, F.when(F.col(col_name).isNull(), F.lit(0)).otherwise(F.col(col_name)))
 
-# IMPROVEMENT 3: Filter outliers based on statistics
 print("Filtering outliers...")
 # Calculate statistics for the target variable
 price_stats = df.select(
@@ -261,13 +253,11 @@ price_stats = df.select(
     stddev(log_target_col).alias("stddev")
 ).collect()[0]
 
-# Define bounds for outlier detection (3 standard deviations)
 mean_val = price_stats["mean"]
 stddev_val = price_stats["stddev"]
 lower_bound = mean_val - 3 * stddev_val
 upper_bound = mean_val + 3 * stddev_val
 
-# Filter out outliers
 df_filtered = df.filter(
     (F.col(log_target_col) >= lower_bound) & 
     (F.col(log_target_col) <= upper_bound)
@@ -276,21 +266,17 @@ df_filtered = df.filter(
 print(f"Filtered out {df.count() - df_filtered.count()} outliers")
 df = df_filtered
 
-# IMPROVEMENT 1: Advanced feature engineering
 print("Performing advanced feature engineering...")
 
-# List of important features for creating interactions and transformations
 important_features = ["living_area", "bedrooms", "bathrooms", "total_rooms", "land_area"]
 important_features = [f for f in important_features if f in feature_cols]  # Keep only existing columns
 
-# Create squared terms for important features
 for feat in important_features:
     squared_col = feat + "_squared"
     df = df.withColumn(squared_col, F.col(feat) * F.col(feat))
     feature_cols.append(squared_col)
     print(f"Created squared feature: {squared_col}")
 
-# Create ratio features (for top feature pairs)
 if "living_area" in feature_cols and "land_area" in feature_cols:
     df = df.withColumn("living_land_ratio", 
                      F.when(F.col("land_area") > 0, F.col("living_area") / F.col("land_area")).otherwise(0))
@@ -309,7 +295,6 @@ if "living_area" in feature_cols and "bedrooms" in feature_cols:
     feature_cols.append("area_per_bedroom")
     print("Created ratio feature: area_per_bedroom")
 
-# Create interaction terms (limit to 3 important combinations to avoid explosion of features)
 key_interactions = [
     ("living_area", "bathrooms"),
     ("bedrooms", "bathrooms"),
@@ -323,12 +308,10 @@ for feat1, feat2 in key_interactions:
         feature_cols.append(interaction_col)
         print(f"Created interaction feature: {interaction_col}")
 
-# Create StringIndexers for categorical columns
 indexers = [StringIndexer(inputCol=col_name, outputCol=col_name + "_indexed", handleInvalid="keep") 
            for col_name in string_cols]
 print("Created indexers for " + str(len(indexers)) + " categorical columns")
 
-# Create vector assembler
 assembler = VectorAssembler(
     inputCols=feature_cols + [c + "_indexed" for c in string_cols], 
     outputCol="features", 

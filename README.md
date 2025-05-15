@@ -105,11 +105,7 @@ docker exec -it spark-master ls -la /tmp/
 ### Exécution du pipeline
 
 ```bash
-docker exec -it spark-master /opt/bitnami/spark/bin/spark-submit \
-  --master local[*] \
-  --conf spark.executor.memory=2g \
-  --conf spark.driver.memory=2g \
-  /tmp/spark.py
+docker exec -it spark-master /opt/bitnami/spark/bin/spark-submit --master local[*] --conf spark.executor.memory=2g --conf spark.driver.memory=2g /tmp/spark.py
 ```
 
 ### Suivre l'exécution
@@ -162,11 +158,26 @@ nano ./scripts/spark_gbt_optimized.py
 # Mettre à jour le script dans le container
 docker cp ./scripts/spark_gbt_optimized.py spark-master:/tmp/spark.py
 ```
-
+![capture ](copy.png)
 3. Relancer l'exécution avec spark-submit
 ```bash
 docker exec -it spark-master /opt/bitnami/spark/bin/spark-submit --master local[*] /tmp/spark.py
 ```
+![capture ](modeling.png)
+
+## 📜 Rapport Complet
+Le rapport détaillé du projet est disponible [ici](rapport.md). Il couvre les étapes de prétraitement, le feature engineering, l'entraînement du modèle et l'évaluation des performances.
+## 📚 Ressources
+- [Documentation PySpark](https://spark.apache.org/docs/latest/api/python/index.html)
+- [Documentation Spark ML](https://spark.apache.org/docs/latest/ml-guide.html)
+- [Documentation Docker](https://docs.docker.com/)
+- [Documentation Docker Compose](https://docs.docker.com/compose/)
+- [Documentation HDFS](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HdfsCommands.html)
+- [Documentation XGBoost](https://xgboost.readthedocs.io/en/latest/)
+- [Documentation Gradient Boosted Trees](https://spark.apache.org/docs/latest/ml-classification-regression.html#gradient-boosted-trees-gbt)
+- [Documentation Feature Engineering](https://spark.apache.org/docs/latest/ml-features.html)
+- [Documentation Feature Importance](https://spark.apache.org/docs/latest/api/python/reference/pyspark.ml.html#pyspark.ml.feature.FeatureImportance)
+- [Documentation Hyperparameter Tuning](https://spark.apache.org/docs/latest/api/python/reference/pyspark.ml.html#pyspark.ml.tuning.HyperparameterTuning)
 
 ## 👨‍💻 Contributeurs
 
