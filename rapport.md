@@ -48,7 +48,7 @@ Le dataset contient une grande variété de colonnes couvrant:
 ### 🌍 Source
 Le jeu de données contient des informations sur des propriétés immobilières en Tunisie, collectées à partir de plusieurs sites web spécialisés. Les données ont été obtenues via un processus de web scraping structuré :
 
-![Processus de collecte des données](scrap.png)
+![Processus de collecte des données](img/scrap.png)
 
 1. **Sites sources** : Trois plateformes immobilières tunisiennes ont été utilisées (tecnocasa.tn, menzili.tn et mubawab.tn)
 2. **Méthode d'extraction** : Le scraping a été réalisé avec la bibliothèque BeautifulSoup en Python
@@ -71,7 +71,7 @@ L'adaptation d'un modèle XGBoost original vers PySpark GBT a nécessité plusie
 
 ### 🔄 Pipeline Spark implémenté
 
-![Pipeline Spark pour la Prédiction des Prix Immobiliers](pipeline_spark.png)
+![Pipeline Spark pour la Prédiction des Prix Immobiliers](img/pipeline_spark.png)
 
 Le pipeline Spark implémenté comprend 7 étapes séquentielles:
 
