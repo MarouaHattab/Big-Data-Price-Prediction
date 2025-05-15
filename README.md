@@ -4,7 +4,7 @@ Ce projet implémente un modèle de prédiction des prix immobiliers utilisant P
 
 ## 📋 Aperçu du Projet
 
-![Pipeline Spark pour la Prédiction des Prix Immobiliers](pipeline_spark.png)
+![Pipeline Spark pour la Prédiction des Prix Immobiliers](img/pipeline_spark.png)
 
 Le projet comprend:
 - Un modèle de prédiction des prix immobiliers basé sur PySpark ML
